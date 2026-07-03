@@ -105,7 +105,11 @@ def backprop(cached, n, m):
 
 
 
- 
+def update_params(params, grads, lr = 0.01):
+    for key in params: #W1, W2, B1, B2 
+        params[key] -= lr * grads[f'D{key}'] # Works because the endings for W1 and DW1
+
+
             
 
 
