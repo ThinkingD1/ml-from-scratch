@@ -13,7 +13,7 @@ np.set_printoptions(precision=3, suppress=True) #Only a printing thing
 - Loss
 """
 
-
+num_epochs = 5
 batch_size = 3
 sample_size = 12
 num_layers = 2 # One hidden layer and one output layer, inputs dont count as a layer
@@ -52,8 +52,8 @@ def relu_deriv(z):
 def calculate_loss(A, Y, m):
     return np.sum(np.square(A-Y)) / m
 
-def loss_deriv(A, Y , m):
-    return 2/m * (A-Y)
+def loss_deriv(A, Y):
+    return 2 * (A-Y)
 
 def sigmoid(z):
     return 1/(1+np.exp(-z))
@@ -71,16 +71,16 @@ def forward(params, A0, n):
         cached[f'A{i}'] = relu(z) if (i < n) else sigmoid(z)
     return cached
 
-prev_dz = None
 
-def backprop(cached, n, m):
+def backprop(params, cached, n, m, Y):
     grads = {}
+    prev_dz = None
     for i in range(n, 0, -1):
         if i == n:
             A = cached[f'A{i}']
-            dz = loss_deriv(A) * sigmoid_deriv(A)
+            dz = loss_deriv(A, Y, m) * sigmoid_deriv(A)
         else:  
-            dz = cached[f'W{i+1}'].T @ prev_dz * sigmoid_deriv(cached[f'A{i}']) # This was an error i originally only element wise multiplied everything, fixed now
+            dz = params[f'W{i+1}'].T @ prev_dz * relu_deriv(cached[f'Z{i}']) # This was an error i originally only element wise multiplied everything, fixed now
 
         dw = (dz @ cached[f'A{i-1}'].T) / m
         db = np.sum(dz, axis=1, keepdims=True) / m # db originally not a nx1 like the biases, so we sum axis 1 which is columns, and keep dimnesions so it remains a 2d array
@@ -97,7 +97,7 @@ def backprop(cached, n, m):
     # Then dl/dz2 stored 
     # dl/b2 =  dl/dz2
 
-    # dl/dw1 = dl/dz2 x dz2/da1 x da1/dz1 x dz1/dw1
+    # dl/dw1 = dz2/da1 (T) @ dl/dz2 x da1/dz1 x dz1/dw1
     #dz2/da1 = W2
 
     # For biases our db size for first layer is a 3 x m so a 3 x 3 as m = batch size
@@ -105,23 +105,22 @@ def backprop(cached, n, m):
 
 
 
-def update_params(params, grads, lr = 0.01):
+def update_params(params, grads, lr):
     for key in params: #W1, W2, B1, B2 
         params[key] -= lr * grads[f'D{key}'] # Works because the endings for W1 and DW1
 
 
-            
 
 
+def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01):
 
-    
+    for epoch_num in range(1, epochs+1):
+        # Gonna ensure all inputs run in batches of size batch_size
+        # Column numbers increase in size batch_size for equal spaced batches
+        for col in range(0, n_samples, batch_size): # There gonna be n_samples/batch_size iterations
+            batch_inputs = A0[:, col: col+batch_size]
+            e_output = Y[:, col: col+batch_size]
 
-"""
-
-cached_vals = forward(params, A0[:, 0:3], num_layers)
-
-for key,value in cached_vals.items():
-    print(f"{key}:\n{value}\n")
-
-"""
-
+            cached = forward(params, batch_inputs, n_layers)
+            grads = backprop(params, cached, n_layers, batch_size, e_output)
+            update_params(params, grads, lr)
