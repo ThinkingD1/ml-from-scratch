@@ -2,21 +2,21 @@ import numpy as np
 np.set_printoptions(precision=3, suppress=True) #Only a printing thing
 
 """
-- 3 layers, 2 input neurons, 3 hidden neurons, 1 output neuron
+- 3 layers: 2 input neurons, 3 hidden neurons, 2 output neuron
 - Given two bits and then outputs the xor value
-- Data set 20 samples
-- Batches of 4
-- 5 iterations
+- Data set 12 samples
+- Batches of 5
 - 3 Epochs
 
 - Z = W_i @ A_i-1 + b_i
 - Loss
 """
 
-num_epochs = 5
+num_epochs = 5000
 batch_size = 3
 sample_size = 12
 num_layers = 2 # One hidden layer and one output layer, inputs dont count as a layer
+weight_scale = 0.01
 
 A0 = np.array([
     [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
@@ -29,8 +29,8 @@ Y = np.array([
 ])   
 
 
-W1 = np.random.randn(3,2) * 0.5
-W2 = np.random.randn(2,3) * 0.5
+W1 = np.random.randn(3,2) * weight_scale
+W2 = np.random.randn(2,3) * weight_scale
 b1 = np.zeros((3,1))
 b2 = np.zeros((2,1))
 
@@ -78,7 +78,7 @@ def backprop(params, cached, n, m, Y):
     for i in range(n, 0, -1):
         if i == n:
             A = cached[f'A{i}']
-            dz = loss_deriv(A, Y, m) * sigmoid_deriv(A)
+            dz = loss_deriv(A, Y) * sigmoid_deriv(A)
         else:  
             dz = params[f'W{i+1}'].T @ prev_dz * relu_deriv(cached[f'Z{i}']) # This was an error i originally only element wise multiplied everything, fixed now
 
@@ -111,10 +111,33 @@ def update_params(params, grads, lr):
 
 
 
+def batch_stats(batch_num, A_last, Y, batch_size, num_of_batches):
+    batch_loss = calculate_loss(A_last, Y, batch_size)
+
+    #Compares the highest in a row, showing the prediction. If row 1 higher it predicts XOR = 1 vice versa
+    predictions = np.argmax(A_last, axis=0)
+    #Contains the expected outputs
+    labels = np.argmax(Y, axis=0)
+    #Compares each prediction with corresponding outputs [True, False, True ..] and adds them up, true means they were the same so you add one, false = 0
+    accuracy = np.mean(predictions == labels) * 100 
+    # Mean: total correct/number of predictions (batch size)
+
+
+    print(f"Batch {batch_num}/{num_of_batches}  |   Loss: {batch_loss}  |   Accuracy: {accuracy}%")
+
+    return accuracy
+
+
+def epoch_stats(epoch_num, total_epochs, accuracy_sum, num_of_batches):
+    print(f"\n\nEpoch {epoch_num}/{total_epochs}  |   Accuracy: {accuracy_sum/num_of_batches}%")
+    print("------------------------------------------------------------------")
+
 
 def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01):
-
+    n_outputs = Y.shape[0]
+    number_of_batches = n_samples//batch_size
     for epoch_num in range(1, epochs+1):
+        accuracy_sum = 0
         # Gonna ensure all inputs run in batches of size batch_size
         # Column numbers increase in size batch_size for equal spaced batches
         for col in range(0, n_samples, batch_size): # There gonna be n_samples/batch_size iterations
@@ -123,4 +146,15 @@ def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01)
 
             cached = forward(params, batch_inputs, n_layers)
             grads = backprop(params, cached, n_layers, batch_size, e_output)
+
+            batch_num = (col//batch_size) + 1
+            accuracy_sum += batch_stats(batch_num, cached[f'A{n_layers}'], e_output, batch_size, number_of_batches)
+
             update_params(params, grads, lr)
+
+        epoch_stats(epoch_num, epochs, accuracy_sum, number_of_batches)
+
+
+
+print("\n")
+train_model(A0, Y, params, batch_size, num_layers, sample_size, num_epochs, 0.01)
