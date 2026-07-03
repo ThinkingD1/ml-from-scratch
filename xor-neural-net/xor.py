@@ -1,4 +1,5 @@
 import numpy as np
+np.set_printoptions(precision=3, suppress=True) #Only a printing thing
 
 """
 - 3 layers, 2 input neurons, 3 hidden neurons, 1 output neuron
@@ -27,6 +28,7 @@ Y = np.array([
     [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]    # is XOR=0?
 ])   
 
+
 W1 = np.random.randn(3,2) * 0.5
 W2 = np.random.randn(2,3) * 0.5
 b1 = np.zeros((3,1))
@@ -40,11 +42,6 @@ params = {
     'B2' : b2
 }
 
-
-print(W1)
-print(W2)
-print(b1)
-print(b2)
 
 def relu(z):
     return np.maximum(z, 0)
@@ -74,6 +71,24 @@ def forward(params, A0, n):
         cached[f'A{i}'] = relu(z) if (i < n) else sigmoid(z)
     return cached
 
+def backprop(cached):
+    # dl/dw2 = dl/a2 x da2/dz2 x dz2/w2
 
-print(forward(params, A0[:, 0:3], num_layers))
+    # dl/db2 = dl/a2 x da2/dz2 x dz2/b2
+    # dz2/db2 = 1 so
+    # dl/b2 =  dl/dz2
+
+    # Then dl/dz2 stored 
+    # dl/dw1 = dl/dz2 x dz2/da1 x da1/dz1 x dz1/dw1
+    pass
+    
+
+"""
+
+cached_vals = forward(params, A0[:, 0:3], num_layers)
+
+for key,value in cached_vals.items():
+    print(f"{key}:\n{value}\n")
+
+"""
 
