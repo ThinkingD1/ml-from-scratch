@@ -13,7 +13,7 @@ np.set_printoptions(precision=3, suppress=True) #Only a printing thing
 - Loss
 """
 
-dz = None
+
 batch_size = 3
 sample_size = 12
 num_layers = 2 # One hidden layer and one output layer, inputs dont count as a layer
@@ -61,7 +61,7 @@ def sigmoid(z):
 def sigmoid_deriv(A):
     return A * (1-A)
 
-#n represents the number of layers
+# n represents the number of layers
 # since we forward in batches of , we slice A0 (inputs for only first 3 columbs)
 
 def forward(params, A0, n):
@@ -71,16 +71,45 @@ def forward(params, A0, n):
         cached[f'A{i}'] = relu(z) if (i < n) else sigmoid(z)
     return cached
 
-def backprop(cached):
-    # dl/dw2 = dl/a2 x da2/dz2 x dz2/w2
+prev_dz = None
 
-    # dl/db2 = dl/a2 x da2/dz2 x dz2/b2
-    # dz2/db2 = 1 so
+def backprop(cached, n, m):
+    grads = {}
+    for i in range(n, 0, -1):
+        if i == n:
+            A = cached[f'A{i}']
+            dz = loss_deriv(A) * sigmoid_deriv(A)
+        else:  
+            dz = cached[f'W{i+1}'].T @ prev_dz * sigmoid_deriv(cached[f'A{i}']) # This was an error i originally only element wise multiplied everything, fixed now
+
+        dw = (dz @ cached[f'A{i-1}'].T) / m
+        db = np.sum(dz, axis=1, keepdims=True) / m # db originally not a nx1 like the biases, so we sum axis 1 which is columns, and keep dimnesions so it remains a 2d array
+        prev_dz = dz
+
+        grads[f'DW{i}'] = dw
+        grads[f'DB{i}'] = db
+
+    return grads
+
+    # dz2/d2 always = A1, transpose A1
+    # dz2/da1 = w2
+    # dl/dw2 = dl/a2 x da2/dz2 x dz2/w2
+    # Then dl/dz2 stored 
     # dl/b2 =  dl/dz2
 
-    # Then dl/dz2 stored 
     # dl/dw1 = dl/dz2 x dz2/da1 x da1/dz1 x dz1/dw1
-    pass
+    #dz2/da1 = W2
+
+    # For biases our db size for first layer is a 3 x m so a 3 x 3 as m = batch size
+    # But we have a bias matrix of 3x1 so we must find the avergae gradient by summing all columns in db and dividing by m
+
+
+
+ 
+            
+
+
+
     
 
 """
