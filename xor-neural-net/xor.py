@@ -27,7 +27,7 @@ def initialise_hidden_layers(*hidden_layers):
 
 
 
-num_epochs = 2000
+num_epochs = 300
 batch_size = 3
 sample_size = 12
 num_layers = 2 # One hidden layer and one output layer, inputs dont count as a layer
@@ -42,20 +42,6 @@ Y = np.array([
     [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0],   # is XOR=1?
     [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]    # is XOR=0?
 ])   
-
-
-W1 = np.random.randn(3,2) * weight_scale
-W2 = np.random.randn(2,3) * weight_scale
-b1 = np.zeros((3,1))
-b2 = np.zeros((2,1))
-
-
-params = {
-    'W1' : W1,
-    'W2' : W2,
-    'B1' : b1,
-    'B2' : b2
-}
 
 
 def relu(z):
@@ -145,11 +131,10 @@ def batch_stats(batch_num, A_last, Y, batch_size, num_of_batches):
 
 def epoch_stats(epoch_num, total_epochs, accuracy_sum, num_of_batches):
     print(f"\n\nEpoch {epoch_num}/{total_epochs}  |   Accuracy: {accuracy_sum/num_of_batches}%")
-    print("------------------------------------------------------------------")
+    print("\n------------------------------------------------------------------")
 
 
 def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01):
-    n_outputs = Y.shape[0]
     number_of_batches = n_samples//batch_size
     for epoch_num in range(1, epochs+1):
         accuracy_sum = 0
@@ -168,11 +153,29 @@ def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01)
             update_params(params, grads, lr)
 
         epoch_stats(epoch_num, epochs, accuracy_sum, number_of_batches)
+    return params
+
+def predict(x1, x2, params):
+    n_layers = len(params) // 2
+    inputs = np.array([
+        [x1],
+        [x2]
+    ])
+    cached = forward(params, inputs, n_layers)
+    output = cached[f'A{n_layers}']
+    #Returns a 2x1, with the outputs
+    prediction = np.argmax(output, axis = 0)[0]
+    #Top Row is XOR=1, bottom row is XOR=0
+    #Return 0 means top row largest, return 1 means bottom row largest
+
+    print("XOR = 1" if prediction == 0 else "XOR = 0")
 
 
 
-print("\n")
-params, num_layers = initialise_hidden_layers(8)
-train_model(A0, Y, params, batch_size, num_layers, sample_size, num_epochs, 0.01)
+initial_params, num_layers = initialise_hidden_layers(8)
+trained_params = train_model(A0, Y, initial_params, batch_size, num_layers, sample_size, num_epochs, 0.01)
+
+
+predict(0, 0, trained_params)
 
 
