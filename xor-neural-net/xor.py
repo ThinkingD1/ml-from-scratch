@@ -12,7 +12,22 @@ np.set_printoptions(precision=3, suppress=True) #Only a printing thing
 - Loss
 """
 
-num_epochs = 5000
+
+# Input layer and Output layer are fixed at 2 neurons, all other hidden layers as many as u want
+def initialise_hidden_layers(*hidden_layers):
+    layers = [2] + list(hidden_layers) + [2]
+    # [2, 3, 4, 2]
+    n_layers = len(layers)
+    params = {}
+    for i in range(1, n_layers):
+        weight_scale = np.sqrt(2/layers[i-1])
+        params[f'W{i}'] = np.random.randn(layers[i], layers[i-1]) * weight_scale
+        params[f'B{i}'] = np.zeros((layers[i], 1))
+    return params, (n_layers - 1)
+
+
+
+num_epochs = 2000
 batch_size = 3
 sample_size = 12
 num_layers = 2 # One hidden layer and one output layer, inputs dont count as a layer
@@ -157,4 +172,7 @@ def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01)
 
 
 print("\n")
+params, num_layers = initialise_hidden_layers(8)
 train_model(A0, Y, params, batch_size, num_layers, sample_size, num_epochs, 0.01)
+
+
