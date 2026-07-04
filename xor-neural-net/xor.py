@@ -1,22 +1,11 @@
 import numpy as np
-np.set_printoptions(precision=3, suppress=True) #Only a printing thing
-
-"""
-- 3 layers: 2 input neurons, 3 hidden neurons, 2 output neuron
-- Given two bits and then outputs the xor value
-- Data set 12 samples
-- Batches of 5
-- 3 Epochs
-
-- Z = W_i @ A_i-1 + b_i
-- Loss
-"""
+np.set_printoptions(precision=3, suppress=True) # Only a printing thing
 
 
-# Input layer and Output layer are fixed at 2 neurons, all other hidden layers as many as u want
+# Input layer and Output layer are fixed at 2 neurons, number of hidden layers can vary
 def initialise_hidden_layers(*hidden_layers):
     layers = [2] + list(hidden_layers) + [2]
-    # [2, 3, 4, 2]
+    #e.g. [2, 3, 4, 2]
     n_layers = len(layers)
     params = {}
     for i in range(1, n_layers):
@@ -24,25 +13,8 @@ def initialise_hidden_layers(*hidden_layers):
         params[f'W{i}'] = np.random.randn(layers[i], layers[i-1]) * weight_scale
         params[f'B{i}'] = np.zeros((layers[i], 1))
     return params, (n_layers - 1)
-
-
-
-num_epochs = 300
-batch_size = 3
-sample_size = 12
-num_layers = 2 # One hidden layer and one output layer, inputs dont count as a layer
-weight_scale = 0.01
-
-A0 = np.array([
-    [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
-    [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
-])
-
-Y = np.array([
-    [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0],   # is XOR=1?
-    [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]    # is XOR=0?
-])   
-
+    #The input layer doesn't technically cout as a layer, we subtract 1 to remove counting input layer
+ 
 
 def relu(z):
     return np.maximum(z, 0)
@@ -63,13 +35,13 @@ def sigmoid_deriv(A):
     return A * (1-A)
 
 # n represents the number of layers
-# since we forward in batches of , we slice A0 (inputs for only first 3 columbs)
 
 def forward(params, A0, n):
     cached = {'A0' : A0}
     for i in range(1, n+1):
         z = cached[f'Z{i}'] = ( params[f'W{i}'] @ cached[f'A{i-1}'] ) + params[f'B{i}']
         cached[f'A{i}'] = relu(z) if (i < n) else sigmoid(z)
+        # Last layer is uses sigmoid as its the outputs, hidden layers use ReLU
     return cached
 
 
@@ -80,48 +52,66 @@ def backprop(params, cached, n, m, Y):
         if i == n:
             A = cached[f'A{i}']
             dz = loss_deriv(A, Y) * sigmoid_deriv(A)
+            # L = (A_n - Y)^2
+            # A_n = sigmoid(Z_n)
+            # Chain: dL/dZ_n = dL/dA_n * dA_n/dZ_n
+            # dL/dA_n = 2(A_n - Y)
+            # dA_n/dZ_n = A_n(1-A_n)  [sigmoid derivative]
         else:  
-            dz = params[f'W{i+1}'].T @ prev_dz * relu_deriv(cached[f'Z{i}']) # This was an error i originally only element wise multiplied everything, fixed now
+            dz = params[f'W{i+1}'].T @ prev_dz * relu_deriv(cached[f'Z{i}'])
+            # Z_{i+1} = W_{i+1} @ A_i + B_{i+1}
+            # A_i = relu(Z_i)
+            # Chain: dL/dZ_i = dL/dZ_{i+1} * dZ_{i+1}/dA_i * dA_i/dZ_i
+            # dZ_{i+1}/dA_i = W_{i+1}.T
+            # dA_i/dZ_i = relu'(Z_i)  [1 if Z>0, 0 if Z<=0]
 
         dw = (dz @ cached[f'A{i-1}'].T) / m
-        db = np.sum(dz, axis=1, keepdims=True) / m # db originally not a nx1 like the biases, so we sum axis 1 which is columns, and keep dimnesions so it remains a 2d array
+        # Z_i = W_i @ A_{i-1} + B_i
+        # Chain: dL/dW_i = dL/dZ_i * dZ_i/dW_i
+        # dZ_i/dW_i = A_{i-1}.T
+        # divide by m to average gradient across batch
+
+        db = np.sum(dz, axis=1, keepdims=True) / m
+        # Z_i = W_i @ A_{i-1} + B_i
+        # Chain: dL/dB_i = dL/dZ_i * dZ_i/dB_i
+        # dZ_i/dB_i = 1
+        # db originally not a num_neurons x 1 like the biases, so we sum axis 1 which is columns, and keep dimensions so it remains a 2d array
+        # sum across batch (axis=1) to collapse to (neurons, 1), divide by m to average
+
         prev_dz = dz
+        # store dL/dZ_i to use next iteration as dL/dZ_{i+1}
 
         grads[f'DW{i}'] = dw
         grads[f'DB{i}'] = db
 
     return grads
 
-    # dz2/d2 always = A1, transpose A1
-    # dz2/da1 = w2
-    # dl/dw2 = dl/a2 x da2/dz2 x dz2/w2
-    # Then dl/dz2 stored 
-    # dl/b2 =  dl/dz2
-
-    # dl/dw1 = dz2/da1 (T) @ dl/dz2 x da1/dz1 x dz1/dw1
-    #dz2/da1 = W2
-
-    # For biases our db size for first layer is a 3 x m so a 3 x 3 as m = batch size
-    # But we have a bias matrix of 3x1 so we must find the avergae gradient by summing all columns in db and dividing by m
 
 
 
 def update_params(params, grads, lr):
     for key in params: #W1, W2, B1, B2 
-        params[key] -= lr * grads[f'D{key}'] # Works because the endings for W1 and DW1
+        params[key] -= lr * grads[f'D{key}'] 
+        # Works because the endings for W1 and DW1
 
 
 
 def batch_stats(batch_num, A_last, Y, batch_size, num_of_batches):
     batch_loss = calculate_loss(A_last, Y, batch_size)
 
-    #Compares the highest in a row, showing the prediction. If row 1 higher it predicts XOR = 1 vice versa
+    # For each column (sample), find which row (neuron) has the highest activation
+    # index 0 = predicts XOR=1, index 1 = predicts XOR=0
+    #returns 1D Array of the indexes of the row which was largest e.g. [0, 1, 1, 0]
     predictions = np.argmax(A_last, axis=0)
-    #Contains the expected outputs
+    
+    # For each column (sample), find which row (neuron) should have been highest using the expected outcomes
+    # Also returns 1D array e.g. [0, 1, 0] *the first element means in the first col, row one had greater value etc
     labels = np.argmax(Y, axis=0)
-    #Compares each prediction with corresponding outputs [True, False, True ..] and adds them up, true means they were the same so you add one, false = 0
-    accuracy = np.mean(predictions == labels) * 100 
-    # Mean: total correct/number of predictions (batch size)
+    
+    # predictions == labels gives [True, False, True ...]
+    # True = 1, False = 0, so mean gives proportion correct
+    # multiply by 100 to convert to percentage
+    accuracy = np.mean(predictions == labels) * 100
 
 
     print(f"Batch {batch_num}/{num_of_batches}  |   Loss: {batch_loss}  |   Accuracy: {accuracy}%")
@@ -171,11 +161,24 @@ def predict(x1, x2, params):
     print("XOR = 1" if prediction == 0 else "XOR = 0")
 
 
+N_OF_EPOCHS = 300
+BATCH_SIZE = 3
+N_OF_SAMPLES = 12
+
+A0 = np.array([
+    [0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1],
+    [0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1]
+])
+
+Y = np.array([
+    [0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0],   # is XOR=1?
+    [1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1]    # is XOR=0?
+])  
 
 initial_params, num_layers = initialise_hidden_layers(8)
-trained_params = train_model(A0, Y, initial_params, batch_size, num_layers, sample_size, num_epochs, 0.01)
+trained_params = train_model(A0, Y, initial_params, BATCH_SIZE, num_layers, N_OF_SAMPLES, N_OF_EPOCHS, 0.01)
 
 
-predict(0, 0, trained_params)
+predict(0, 1, trained_params)
 
 
