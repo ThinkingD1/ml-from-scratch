@@ -52,13 +52,15 @@ def backprop(params, cached, n, m, Y):
         if i == n:
             A = cached[f'A{i}']
             dz = loss_deriv(A, Y) * sigmoid_deriv(A)
+            # Finding dz for last layer is different than finding dz for the layers after 
             # L = (A_n - Y)^2
             # A_n = sigmoid(Z_n)
             # Chain: dL/dZ_n = dL/dA_n * dA_n/dZ_n
-            # dL/dA_n = 2(A_n - Y)
+            # dL/dA_n = 2(A_n - Y) [Loss derivative]
             # dA_n/dZ_n = A_n(1-A_n)  [sigmoid derivative]
         else:  
             dz = params[f'W{i+1}'].T @ prev_dz * relu_deriv(cached[f'Z{i}'])
+            # Finding dz for the layers after the last layer is the same
             # Z_{i+1} = W_{i+1} @ A_i + B_{i+1}
             # A_i = relu(Z_i)
             # Chain: dL/dZ_i = dL/dZ_{i+1} * dZ_{i+1}/dA_i * dA_i/dZ_i
@@ -119,9 +121,13 @@ def batch_stats(batch_num, A_last, Y, batch_size, num_of_batches):
     return accuracy
 
 
+
+
 def epoch_stats(epoch_num, total_epochs, accuracy_sum, num_of_batches):
     print(f"\n\nEpoch {epoch_num}/{total_epochs}  |   Accuracy: {accuracy_sum/num_of_batches}%")
     print("\n------------------------------------------------------------------")
+
+
 
 
 def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01):
@@ -145,6 +151,8 @@ def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01)
         epoch_stats(epoch_num, epochs, accuracy_sum, number_of_batches)
     return params
 
+
+
 def predict(x1, x2, params):
     n_layers = len(params) // 2
     inputs = np.array([
@@ -161,7 +169,7 @@ def predict(x1, x2, params):
     print("XOR = 1" if prediction == 0 else "XOR = 0")
 
 
-N_OF_EPOCHS = 300
+N_OF_EPOCHS = 150
 BATCH_SIZE = 3
 N_OF_SAMPLES = 12
 
@@ -179,6 +187,6 @@ initial_params, num_layers = initialise_hidden_layers(8)
 trained_params = train_model(A0, Y, initial_params, BATCH_SIZE, num_layers, N_OF_SAMPLES, N_OF_EPOCHS, 0.01)
 
 
-predict(0, 1, trained_params)
+predict(1, 1, trained_params)
 
 
