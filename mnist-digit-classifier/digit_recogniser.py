@@ -167,18 +167,18 @@ def test_model(test_inputs, params, num_layers, Y_test):
     accuracy = np.mean(predictions == expected) * 100
     print(f"Test Accuracy: {accuracy}%")
 
+if __name__ == "__main__":
+    N_OF_EPOCHS = 15
+    BATCH_SIZE = 64
+    # 64 doesn't divide evenly into 37000 but numpy slicing handles the smaller last batch automatically
 
-N_OF_EPOCHS = 15
-BATCH_SIZE = 64
-# 64 doesn't divide evenly into 37000 but numpy slicing handles the smaller last batch automatically
-
-initial_params, num_layers = initialise_hidden_layers(128, 64)
-trained_params = train_model(train_inputs, Y_train, initial_params, BATCH_SIZE, num_layers, N_TRAIN_SAMPLES, N_OF_EPOCHS, lr=0.1)
-
-
-# saves my params (weights and biases)
-np.save('params.npy', trained_params)
+    initial_params, num_layers = initialise_hidden_layers(128, 64)
+    trained_params = train_model(train_inputs, Y_train, initial_params, BATCH_SIZE, num_layers, N_TRAIN_SAMPLES, N_OF_EPOCHS, lr=0.1)
 
 
-# Final evaluation on 5000 samples the network has never seen to check the network generalises beyond training samples
-test_model(test_inputs, trained_params, num_layers, Y_test)
+    # saves my params (weights and biases)
+    np.save('params.npy', trained_params)
+
+
+    # Final evaluation on 5000 samples the network has never seen to check the network generalises beyond training samples
+    test_model(test_inputs, trained_params, num_layers, Y_test)
