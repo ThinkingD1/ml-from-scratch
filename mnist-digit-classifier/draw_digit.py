@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw
 import numpy as np
 
 # ── Import network functions from your training file ──
-from digit_recogniser import forward, softmax, relu
+from digit_recognizer import forward, softmax, relu
 
 # ── Load trained params ──
 # params.npy is saved in ml-from-scratch root, one level up from mnist-digit-classifier
