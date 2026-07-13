@@ -8,7 +8,7 @@ from digit_recogniser import forward, softmax, relu
 
 # ── Load trained params ──
 # params.npy is saved in ml-from-scratch root, one level up from mnist-digit-classifier
-params   = np.load('params.npy', allow_pickle=True).item()
+params   = np.load('mnist-digit-classifier/params.npy', allow_pickle=True).item()
 n_layers = len(params) // 2  # number of weight layers (W1,B1,W2,B2... -> divide by 2)
 
 CANVAS_SIZE = 280  # physical canvas size in pixels (10x zoom of 28x28)
@@ -35,8 +35,8 @@ def preprocess_canvas(pil_image):
 def predict(arr):
     # Run the input through the trained network
     cached = forward(arr, params, n_layers)
-    output = cached[f'A{n_layers}']       # shape (10, 1) - probability per digit
-    digit  = int(np.argmax(output))        # index of highest probability = predicted digit
+    output = cached[f'A{n_layers}']  # shape (10, 1) - probability per digit
+    digit  = int(np.argmax(output))   # index of highest probability = predicted digit
     conf   = float(output[digit][0]) * 100 # softmax value as percentage confidence
     return digit, conf
 
@@ -147,7 +147,7 @@ class DrawApp:
             # Mirror exact same stroke on hidden PIL image used for prediction
             self.pil_draw.line(
                 [self.last_x, self.last_y, x, y],
-                fill=255,           # white in greyscale
+                fill=255, # white in greyscale
                 width=BRUSH_SIZE
             )
 
@@ -160,14 +160,14 @@ class DrawApp:
         self.last_y = None
 
     def clear(self):
-        self.canvas.delete("all")                                           # wipe visible canvas
+        self.canvas.delete("all") # wipe visible canvas
         self.pil_draw.rectangle([0, 0, CANVAS_SIZE, CANVAS_SIZE], fill=0)  # wipe PIL image
         self.result_label.config(text="?")
         self.conf_label.config(text="draw a digit")
 
     def run_predict(self):
         arr         = preprocess_canvas(self.pil_image)  # convert drawing to (784,1) array
-        digit, conf = predict(arr)                        # run through network
+        digit, conf = predict(arr) # run through network
         self.result_label.config(text=str(digit))
         self.conf_label.config(text=f"{conf:.1f}% confident")
 

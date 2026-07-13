@@ -141,8 +141,8 @@ def epoch_stats(A0, params, num_layers, Y):
 def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01):
     number_of_batches = n_samples//batch_size
     for epoch_num in range(1, epochs+1):
-        # Gonna ensure all inputs run in batches of size batch_size
-        # Column numbers increase in size batch_size for equal spaced batches
+        # Ensure all inputs run in batches of size batch_size
+        # Column numbers increase in size batch_size for roughly equal spaced batches
         for col in range(0, n_samples, batch_size): # There gonna be n_samples/batch_size iterations
             batch_inputs = A0[:, col: col+batch_size]
             e_output = Y[:, col: col+batch_size]
@@ -152,7 +152,7 @@ def train_model(A0, Y, params, batch_size, n_layers, n_samples, epochs, lr=0.01)
 
             update_params(params, grads, lr)
 
-        # Epoch stats here: Gonna do a full epoch pass at the end and print the stats of that
+        # Epoch stats here: Going to do a full epoch pass at the end and print the stats of that
         epoch_loss, epoch_accuracy = epoch_stats(A0, params, n_layers, Y)
         print(f"Epoch {epoch_num}   |   Loss: {epoch_loss}  |   Accuracy: {epoch_accuracy}%")
 
