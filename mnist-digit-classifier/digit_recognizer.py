@@ -177,7 +177,7 @@ if __name__ == "__main__":
 
 
     # saves my params (weights and biases)
-    np.save('params.npy', trained_params)
+    np.save('mnist-digit-classifier/params.npy', trained_params)
 
 
     # Final evaluation on 5000 samples the network has never seen to check the network generalises beyond training samples
