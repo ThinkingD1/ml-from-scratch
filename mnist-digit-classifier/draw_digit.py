@@ -3,11 +3,10 @@ from tkinter import font
 from PIL import Image, ImageDraw
 import numpy as np
 
-# ── Import network functions from your training file ──
+# Import network functions from your training file
 from digit_recognizer import forward, softmax, relu
 
-# ── Load trained params ──
-# params.npy is saved in ml-from-scratch root, one level up from mnist-digit-classifier
+# Load params
 params   = np.load('mnist-digit-classifier/params.npy', allow_pickle=True).item()
 n_layers = len(params) // 2  # number of weight layers (W1,B1,W2,B2... -> divide by 2)
 
@@ -166,7 +165,7 @@ class DrawApp:
         self.conf_label.config(text="draw a digit")
 
     def run_predict(self):
-        arr         = preprocess_canvas(self.pil_image)  # convert drawing to (784,1) array
+        arr = preprocess_canvas(self.pil_image)  # convert drawing to (784,1) array
         digit, conf = predict(arr) # run through network
         self.result_label.config(text=str(digit))
         self.conf_label.config(text=f"{conf:.1f}% confident")
